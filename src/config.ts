@@ -30,6 +30,7 @@ interface SecurityConfig {
       readonly 'font-src': string[];
       readonly 'frame-src': string[];
       readonly 'frame-ancestors': string[];
+      readonly 'form-action': string[];
     };
   };
   readonly RATE_LIMIT: {
@@ -82,6 +83,9 @@ const allowedOrigins = import.meta.env.VITE_ALLOWED_ORIGINS
   ? import.meta.env.VITE_ALLOWED_ORIGINS.split(',')
   : ['http://localhost:3000', 'http://localhost:8081'];
 
+// Determine if we're in development mode
+const isDevelopment = import.meta.env.DEV;
+
 // Configuration object
 export const API_CONFIG: ApiConfig = {
   BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081',
@@ -100,15 +104,28 @@ export const API_CONFIG: ApiConfig = {
   },
   SECURITY: {
     CSP: {
-      directives: {
+      directives: isDevelopment ? {
+        // Read-only CSP for development
         'default-src': ["'self'"],
-        'script-src': ["'self'", "'unsafe-inline'"], // Required for Svelte
-        'style-src': ["'self'", "'unsafe-inline'"], // Required for Tailwind
+        'script-src': ["'self'", "'unsafe-inline'"], // Required for Vite development
+        'style-src': ["'self'", "'unsafe-inline'"], // Required for Vite development
+        'img-src': ["'self'", 'data:'],
+        'connect-src': ["'self'", ...allowedOrigins, 'ws:', 'wss:'], // Allow WebSocket for HMR
+        'font-src': ["'self'"],
+        'frame-src': ["'none'"],
+        'frame-ancestors': ["'none'"],
+        'form-action': ["'none'"] // Prevent form submissions in read-only mode
+      } : {
+        // Production CSP
+        'default-src': ["'self'"],
+        'script-src': ["'self'"],
+        'style-src': ["'self'"],
         'img-src': ["'self'", 'data:', 'https:'],
         'connect-src': ["'self'", ...allowedOrigins],
         'font-src': ["'self'", 'https://fonts.gstatic.com'],
         'frame-src': ["'none'"],
-        'frame-ancestors': ["'none'"]
+        'frame-ancestors': ["'none'"],
+        'form-action': ["'self'"]
       }
     },
     RATE_LIMIT: {
@@ -117,7 +134,7 @@ export const API_CONFIG: ApiConfig = {
     },
     CORS: {
       ALLOWED_ORIGINS: allowedOrigins,
-      ALLOWED_METHODS: ['GET', 'POST', 'OPTIONS'],
+      ALLOWED_METHODS: isDevelopment ? ['GET'] : ['GET', 'POST', 'OPTIONS'], // Read-only in development
       ALLOWED_HEADERS: ['Content-Type', 'Authorization'],
       EXPOSE_HEADERS: ['Content-Length', 'X-Rate-Limit-Remaining'],
       MAX_AGE: 86400, // 24 hours
