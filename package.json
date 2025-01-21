@@ -20,7 +20,7 @@
     "tailwindcss": "^3.4.16",
     "tslib": "^2.8.1",
     "typescript": "~5.6.2",
-    "vite": "^6.0.1"
+    "vite": "^6.0.11"
   },
   "dependencies": {
     "svelte-store": "^0.0.2",
